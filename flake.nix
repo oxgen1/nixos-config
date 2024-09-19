@@ -15,7 +15,7 @@
       specialArgs = { inherit inputs; }; # this is the important part
       system = "x86_64-linux";
       modules = [
-        ./configuration.nix
+        ./desktop/configuration.nix
         
          home-manager.nixosModules.home-manager
           {
@@ -26,5 +26,19 @@
       ];
     };
 
+    nixosConfigurations.jacks-laptop = nixpkgs.lib.nixosSystem {
+      specialArgs = { inherit inputs; }; # this is the important part
+      system = "x86_64-linux";
+      modules = [
+        ./laptop/configuration.nix
+        
+         home-manager.nixosModules.home-manager
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.users.jack = import ./home;
+          }
+      ];
+    };
   };
 }
