@@ -166,7 +166,7 @@
   #   avahi = pkgs.avahi.override {withLibdnssdCompat = true; };
   # };
 
-  # console.font = "SpaceMono";
+  # console.font = "ZedMono Nerd Font";
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
