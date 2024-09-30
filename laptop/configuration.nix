@@ -20,68 +20,24 @@
     # Add any missing dynamic libraries for unpackaged programs
     # here, NOT in environment.systemPackagesy
   ];
-
-#  boot.kernelParams = [
- #   "nvidia-drm.fbdev=1"
-  #];
-
   nixpkgs.config.allowUnfree = true;
-  # xdg.portal = {
-  #     enable = true;
-  #     wlr.enable = true;
-  #     extraPortals = with pkgs; [
-  #       xdg-desktop-portal-wlr
-  #     ];
-  #   };
 
-   # Enable OpenGL
-  hardware.graphics.enable = true;
-
-  services.xserver.videoDrivers = ["nvidia"];
-  hardware.nvidia = {
-
-    # Modesetting is required.
-    modesetting.enable = true;
-
-    # Nvidia power management. Experimental, and can cause sleep/suspend to fail.
-    # Enable this if you have graphical corruption issues or application crashes after waking
-    # up from sleep. This fixes it by saving the entire VRAM memory to /tmp/ instead
-    # of just the bare essentials.
-    powerManagement.enable = false;
-
-    # Fine-grained power management. Turns off GPU when not in use.
-    # Experimental and only works on modern Nvidia GPUs (Turing or newer).
-    powerManagement.finegrained = false;
-
-    # Use the NVidia open source kernel module (not to be confused with the
-    # independent third-party "nouveau" open source driver).
-    # Support is limited to the Turing and later architectures. Full list of
-    # supported GPUs is at:
-    # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus
-    # Only available from driver 515.43.04+
-    # Currently alpha-quality/buggy, so false is currently the recommended setting.
-    open = false;
-
-    # Enable the Nvidia settings menu,
-  # accessible via `nvidia-settings`.
-    nvidiaSettings = true;
-
-    # Optionally, you may need to select the appropriate driver version for your specific GPU.
-    package = config.boot.kernelPackages.nvidiaPackages.beta;
-  };
   users.users.root.initialHashedPassword = "";
 
-  services.xserver.enable = false;
+  #services.xserver.enable = false;
   services.displayManager.sddm.enable = true;
   services.displayManager.sddm.wayland.enable = true;
   programs.hyprland = {
-    enable = false;
+    enable = true;
   };
   
+  hardware.bluetooth.enable = true; # enables support for Bluetooth
+  hardware.bluetooth.powerOnBoot = true; # powers up the default Bluetooth controller on boot
   
   services.desktopManager.plasma6.enable = true;
 
   networking.networkmanager.enable = true;
+  #networking.wireless.enable = true;
 
   programs.fish.enable = true;
   programs.direnv.enable = true;
@@ -96,15 +52,14 @@
   };
 
   programs.gnupg = {
-    dirmngr.enable = true;
-    agent = {
-      enable = true;
-      enableSSHSupport = true;
-    };
+   dirmngr.enable = true;
+   agent = {
+     enable = true;
+     enableSSHSupport = true;
+   };
   };
 
-
-  networking.hostName = "jacks-pc"; # Define your hostname.
+  networking.hostName = "jacks-laptop"; # Define your hostname.
   # Pick only one of the below networking options.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
   # networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
@@ -129,7 +84,7 @@
   # services.xserver.xkb.options = "eurosign:e,caps:escape";
 
   # Enable CUPS to print documents.
-  # services.printing.enable = true;
+   services.printing.enable = true;
 
   # Enable sound.
   # hardware.pulseaudio.enable = true;
@@ -158,23 +113,24 @@
      packages = with pkgs; [
       nushell
       starship
-      zellij
-      mpv
-      fnm
-      yubikey-manager-qt
+      #zellij
+      #mpv
+      #fnm
+      #yubikey-manager-qt
       flameshot
-      discordo
-      yazi
-      spotify-player
+      #discordo
+      #yazi
+      #spotify-player
+      helix
       spotify
       obsidian
       discord
       fzf
-      ardour
-      yubikey-personalization
-      yubikey-personalization-gui
-      yubico-piv-tool
-      yubioath-flutter
+ #     ardour
+    #  yubikey-personalization
+   #   yubikey-personalization-gui
+  #    yubico-piv-tool
+ #     yubioath-flutter
      ];
   };
 
@@ -188,57 +144,19 @@
     brave
     vscode
     kitty
-    python3
-    nodejs_20
-    btop
-    zulu # java
-    zulu17
+    rustup
+    #python3
+    #nodejs_20
+    #btop
+    #zulu # java
     dropbox
     usbutils
     yubikey-manager
     gnupg
-    wireguard-tools
+    bun
   ];
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
-  networking.firewall = {
-    allowedUDPPorts = [ 51822 ]; # Clients and peers can use the same port, see listenport
-  };
-  # Enable WireGuard
-  networking.wireguard.interfaces = {
-    # "wg0" is the network interface name. You can name the interface arbitrarily.
-    wg0 = {
-      # Determines the IP address and subnet of the client's end of the tunnel interface.
-      ips = [ "10.8.0.4/24" ];
-      listenPort = 51822; # to match firewall allowedUDPPorts (without this wg uses random port numbers)
 
-      # Path to the private key file.
-      #
-      # Note: The private key can also be included inline via the privateKey option,
-      # but this makes the private key world-readable; thus, using privateKeyFile is
-      # recommended.
-      privateKeyFile = "/home/jack/wireguard-keys/private";
-
-      peers = [
-        # For a client configuration, one peer entry for the server will suffice.
-
-        {
-          # Public key of the server (not a file path).
-          publicKey = "0CExFB1dRPXq23P+pMi3xREjG+ObZQXkPUcJkTrWiH4=";
-
-          # Forward all the traffic via VPN.
-          allowedIPs = [ "10.8.0.0/24" ];
-          # Or forward only particular subnets
-          #allowedIPs = [ "10.100.0.1" "91.108.12.0/22" ];
-
-          # Set this to the server IP and port.
-          endpoint = "38.132.122.143:51820"; # ToDo: route to endpoint not automatically configured https://wiki.archlinux.org/index.php/WireGuard#Loop_routing https://discourse.nixos.org/t/solved-minimal-firewall-setup-for-wireguard-client/7577
-
-          # Send keepalives every 25 seconds. Important to keep NAT tables alive.
-          persistentKeepalive = 25;
-        }
-      ];
-    };
-  };
 
   fonts.packages = with pkgs; [
     (nerdfonts.override { fonts = [ "SpaceMono" "ZedMono" ]; })
@@ -249,7 +167,7 @@
   #   avahi = pkgs.avahi.override {withLibdnssdCompat = true; };
   # };
 
-  # console.font = "SpaceMono";
+  # console.font = "ZedMono Nerd Font";
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;

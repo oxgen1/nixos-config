@@ -6,6 +6,12 @@
   home.username = "jack";
   home.homeDirectory = "/home/jack";
 
+  programs.direnv = {
+      enable = true;
+      enableFishIntegration = true; # see note on other shells below
+      nix-direnv.enable = true;
+    };
+
   # This value determines the Home Manager release that your
   # configuration is compatible with. This helps avoid breakage
   # when a new Home Manager release introduces backwards

@@ -3,7 +3,8 @@
 {
   imports = [
     ./home.nix
-    # ./git.nix
+    ./git.nix
     ./starship.nix
+    ./vscode/vscode.nix
   ];
 }
