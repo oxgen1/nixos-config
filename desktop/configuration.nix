@@ -14,18 +14,31 @@
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-
+  boot.kernelPackages = pkgs.linuxKernel.packages.linux_6_11;
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
     # Add any missing dynamic libraries for unpackaged programs
     # here, NOT in environment.systemPackagesy
   ];
 
-#  boot.kernelParams = [
- #   "nvidia-drm.fbdev=1"
-  #];
+# boot.kernelParams = [
+#   "nvidia-drm.fbdev=1"
+#  ];
 
   nixpkgs.config.allowUnfree = true;
+   # do garbage collection weekly to keep disk usage low
+  nix.gc = {
+    automatic = lib.mkDefault true;
+    dates = lib.mkDefault "weekly";
+    options = lib.mkDefault "--delete-older-than 7d";
+  };
+
+  # Manual optimise storage: nix-store --optimise
+  # https://nixos.org/manual/nix/stable/command-ref/conf-file.html#conf-auto-optimise-store
+  nix.settings.auto-optimise-store = true;
+
+  nix.channel.enable = false; # remove nix-channel related tools & configs, we use flakes instead.
+
   # xdg.portal = {
   #     enable = true;
   #     wlr.enable = true;
@@ -67,11 +80,11 @@
     nvidiaSettings = true;
 
     # Optionally, you may need to select the appropriate driver version for your specific GPU.
-    package = config.boot.kernelPackages.nvidiaPackages.beta;
+    package = config.boot.kernelPackages.nvidiaPackages.production;
   };
   users.users.root.initialHashedPassword = "";
 
-  services.xserver.enable = false;
+  services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
   services.displayManager.sddm.wayland.enable = true;
   programs.hyprland = {
@@ -249,7 +262,7 @@
   #   avahi = pkgs.avahi.override {withLibdnssdCompat = true; };
   # };
 
-   console.font = "ZedMono";
+  #console.font = "ZedMono";
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
