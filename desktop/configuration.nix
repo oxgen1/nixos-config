@@ -115,6 +115,10 @@
       enableSSHSupport = true;
     };
   };
+  
+  programs.steam = {
+    enable = true;
+  };
 
 
   networking.hostName = "jacks-pc"; # Define your hostname.
@@ -211,9 +215,14 @@
     yubikey-manager
     gnupg
     wireguard-tools
+    wineWowPackages.stable
   ];
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
   networking.firewall = {
+    allowedTCPPorts = [ 
+      5173
+      3000
+     ];
     allowedUDPPorts = [ 51822 ]; # Clients and peers can use the same port, see listenport
   };
   # Enable WireGuard
