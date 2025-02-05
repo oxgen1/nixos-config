@@ -9,7 +9,7 @@
     ];
 
   boot.initrd.availableKernelModules = [ "xhci_pci" "ahci" "nvme" "usbhid" "usb_storage" "sd_mod" ];
-  boot.initrd.kernelModules = [ ];
+  boot.initrd.kernelModules = [ "nfs" "nf_conntrack"];
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
 
@@ -73,6 +73,12 @@
       fsType = "vfat";
       options = [ "fmask=0022" "dmask=0022" ];
     };
+
+  fileSystems."/content/nfs_test" = {
+    device = "10.0.0.31:/content/nfs_test";
+    fsType = "nfs";
+    options = [ "x-systemd.automount" "noauto" "x-systemd.device-timeout=175" "timeo=15" "x-systemd.idle-timeout=1min" "user"];
+  };
 
   swapDevices = [ ];
 

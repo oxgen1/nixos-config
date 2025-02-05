@@ -119,6 +119,7 @@
       #yubikey-manager-qt
       flameshot
       #discordo
+      orca-slicer
       #yazi
       #spotify-player
       helix

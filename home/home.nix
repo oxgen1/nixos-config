@@ -6,6 +6,14 @@
   home.username = "jack";
   home.homeDirectory = "/home/jack";
 
+  home.packages = with pkgs; [
+    dig
+    mtr
+    conntrack-tools
+    hping
+    tcpdump
+  ];
+
   programs.direnv = {
       enable = true;
       enableFishIntegration = true; # see note on other shells below

@@ -90,7 +90,13 @@
   programs.hyprland = {
     enable = false;
   };
-  
+
+  security.wrappers."mount.nfs" = {
+    setuid = true;
+    owner = "root";
+    group = "root";
+    source = "${pkgs.nfs-utils.out}/bin/mount.nfs";
+  };
   
   services.desktopManager.plasma6.enable = true;
 
@@ -119,7 +125,6 @@
   programs.steam = {
     enable = true;
   };
-
 
   networking.hostName = "jacks-pc"; # Define your hostname.
   # Pick only one of the below networking options.
@@ -156,9 +161,10 @@
     pulse.enable = true;
     jack.enable = true;
   };
-
+   services.pcscd.enable = true;
    services.udev.packages = [pkgs.yubikey-personalization];
-
+  #  hardware.gpgSmartcards.enable = true;
+  
   # Enable touchpad support (enabled default in most desktopManager).
   # services.libinput.enable = true;
 
@@ -171,8 +177,12 @@
       "networkmanager"
       "audio"
       "jackaudio"
+      "plugdev"
+      "dialout"
     ]; # Enable ‘sudo’ for the user.
      packages = with pkgs; [
+      age-plugin-yubikey
+      age
       nushell
       starship
       zellij
@@ -187,6 +197,7 @@
       obsidian
       discord
       fzf
+      gnuradio
       ardour
       yubikey-personalization
       yubikey-personalization-gui
@@ -206,25 +217,50 @@
     vscode
     kitty
     python3
+    # hackrf
+    # soapyhackrf
+    # soapysdr
+    # gqrx
+    kicad-small
     nodejs_20
     btop
+    # urh
     zulu # java
     zulu17
+    # cubicsdr
     dropbox
     usbutils
     yubikey-manager
     gnupg
     wireguard-tools
     wineWowPackages.stable
+    wineWowPackages.waylandFull
+    winetricks
   ];
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
+
+#   services.openssh = {
+#   enable = true;
+#   ports = [ 22 ];
+#   settings = {
+#     PasswordAuthentication = true;
+#     AllowUsers = null; # Allows all users by default. Can be [ "user1" "user2" ]
+#     UseDns = true;
+#     X11Forwarding = false;
+#     PermitRootLogin = "prohibit-password"; # "yes", "without-password", "prohibit-password", "forced-commands-only", "no"
+#   };
+# };
+
   networking.firewall = {
+    enable = true;
     allowedTCPPorts = [ 
       5173
       3000
      ];
-    allowedUDPPorts = [ 51822 ]; # Clients and peers can use the same port, see listenport
+    allowedUDPPorts = [ 69 51822 ]; # Clients and peers can use the same port, see listenport
   };
+
+  hardware.hackrf.enable = true;
   # Enable WireGuard
   networking.wireguard.interfaces = {
     # "wg0" is the network interface name. You can name the interface arbitrarily.
@@ -247,12 +283,8 @@
           # Public key of the server (not a file path).
           publicKey = "0CExFB1dRPXq23P+pMi3xREjG+ObZQXkPUcJkTrWiH4=";
 
-          # Forward all the traffic via VPN.
           allowedIPs = [ "10.8.0.0/24" ];
-          # Or forward only particular subnets
-          #allowedIPs = [ "10.100.0.1" "91.108.12.0/22" ];
-
-          # Set this to the server IP and port.
+          
           endpoint = "38.132.122.143:51820"; # ToDo: route to endpoint not automatically configured https://wiki.archlinux.org/index.php/WireGuard#Loop_routing https://discourse.nixos.org/t/solved-minimal-firewall-setup-for-wireguard-client/7577
 
           # Send keepalives every 25 seconds. Important to keep NAT tables alive.
@@ -263,7 +295,9 @@
   };
 
   fonts.packages = with pkgs; [
-    (nerdfonts.override { fonts = [ "SpaceMono" "ZedMono" ]; })
+    nerd-fonts.space-mono
+    nerd-fonts.zed-mono
+    # (nerdfonts.override { fonts = [ "SpaceMono" "ZedMono" ]; })
   ];
   fonts.fontDir.enable = true;
 
