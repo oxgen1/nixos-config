@@ -15,13 +15,20 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
-
   outputs = { self, nixpkgs, home-manager, sops-nix, ... } @ inputs: {
     packages.x86_64-linux.hello = nixpkgs.legacyPackages.x86_64-linux.hello;
     packages.x86_64-linux.default = self.packages.x86_64-linux.hello;
 
+
+    packages.x86_64-linux.bun = nixpkgs.legacyPackages.x86_64-linux.bun.overrideAttrs {
+      src = builtins.fetchurl {
+        url = "https://github.com/oven-sh/bun/releases/download/canary/bun-linux-x64.zip";
+        sha256 = "sha256-fNA9Z3xP53NMpEcn+ji1SiEJWvCrAFtLK3aKAYt+UZ8=";
+      };
+    };
+
     nixosConfigurations.jacks-pc = nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit inputs; }; # this is the important part
+      specialArgs = { inherit inputs;  }; # this is the important part
       system = "x86_64-linux";
       modules = [
         ./desktop/configuration.nix

@@ -14,7 +14,7 @@
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.kernelPackages = pkgs.linuxKernel.packages.linux_6_11;
+  boot.kernelPackages = pkgs.linuxKernel.packages.linux_6_12;
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
     # Add any missing dynamic libraries for unpackaged programs
@@ -80,9 +80,9 @@
     nvidiaSettings = true;
 
     # Optionally, you may need to select the appropriate driver version for your specific GPU.
-    package = config.boot.kernelPackages.nvidiaPackages.production;
+    package = config.boot.kernelPackages.nvidiaPackages.beta;
   };
-  users.users.root.initialHashedPassword = "";
+  # users.users.root.initialHashedPassword = "";
 
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
@@ -91,12 +91,44 @@
     enable = false;
   };
 
-  security.wrappers."mount.nfs" = {
-    setuid = true;
-    owner = "root";
-    group = "root";
-    source = "${pkgs.nfs-utils.out}/bin/mount.nfs";
+  services.printing.enable = true;
+  services.avahi = {
+  enable = true;
+  nssmdns4 = true;
+  openFirewall = true;
+};
+
+services.printing.drivers = [ pkgs.brlaser ];
+
+
+
+  # services.mysql.enable = true;
+  # services.mysql.package = pkgs.mariadb;
+
+  # security.wrappers."mount.nfs" = {
+  #   setuid = true;
+  #   owner = "root";
+  #   group = "root";
+  #   source = "${pkgs.nfs-utils.out}/bin/mountf.nfs";
+  # };
+
+  security.pam = {
+    u2f = {
+      enable = true;
+      settings = {
+        interactive = false;
+        cue = true;
+      };
+    };
+    services = {
+      login.u2fAuth = true;
+      sudo.u2fAuth = true;
+      kde.u2fAuth = true;
+      sddm.u2fAuth = true;
+      polkit-1.u2fAuth = true;
+    };
   };
+
   
   services.desktopManager.plasma6.enable = true;
 
@@ -134,6 +166,9 @@
   # Set your time zone.
    time.timeZone = "America/New_York";
 
+
+  programs.adb.enable = true;
+
   # Configure network proxy if necessary
   # networking.proxy.default = "http://user:password@proxy:port/";
   # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
@@ -162,7 +197,7 @@
     jack.enable = true;
   };
    services.pcscd.enable = true;
-   services.udev.packages = [pkgs.yubikey-personalization];
+   services.udev.packages = [pkgs.yubikey-personalization pkgs.openocd];
   #  hardware.gpgSmartcards.enable = true;
   
   # Enable touchpad support (enabled default in most desktopManager).
@@ -182,13 +217,15 @@
     ]; # Enable ‘sudo’ for the user.
      packages = with pkgs; [
       age-plugin-yubikey
+      bun
+      alacritty
       age
       nushell
       starship
       zellij
       mpv
       fnm
-      yubikey-manager-qt
+      yubioath-flutter
       flameshot
       discordo
       yazi
@@ -202,6 +239,7 @@
       yubikey-personalization
       yubikey-personalization-gui
       yubico-piv-tool
+      android-studio
       yubioath-flutter
      ];
   };
@@ -257,9 +295,13 @@
       5173
       3000
      ];
-    allowedUDPPorts = [ 69 51822 ]; # Clients and peers can use the same port, see listenport
+    allowedUDPPorts = [ 69 51822]; # Clients and peers can use the same port, see listenport
   };
 
+  # networking.vlans = {
+  #   internet = {id=10; interface="enp3s0"; }; 
+  #   admin = {id=500; interface="enp3s0"; }; 
+  # };
   hardware.hackrf.enable = true;
   # Enable WireGuard
   networking.wireguard.interfaces = {
@@ -292,6 +334,31 @@
         }
       ];
     };
+    wg1 = { # Hackspace
+      # Determines the IP address and subnet of the client's end of the tunnel interface.
+      ips = [ "192.168.42.5" ];
+      listenPort = 51823; # to match firewall allowedUDPPorts (without this wg uses random port numbers)
+
+      # Path to the private key file.
+      #
+      # Note: The private key can also be included inline via the privateKey option,
+      # but this makes the private key world-readable; thus, using privateKeyFile is
+      # recommended.
+      privateKeyFile = "/home/jack/wireguard-keys/private";
+
+      peers = [
+        # For a client configuration, one peer entry for the server will suffice.
+
+        {
+          # Public key of the server (not a file path).
+          publicKey = "CzofXYCRSMXOEtdhdXK2/y+q1ywMEM4rdnOtNxFGyFc=";
+
+          allowedIPs = [ "192.168.42.0/24" "192.168.122.0/24" ];
+          
+          endpoint = "vpn.cthacker.space:23456"; # ToDo: route to endpoint not automatically configured https://wiki.archlinux.org/index.php/WireGuard#Loop_routing https://discourse.nixos.org/t/solved-minimal-firewall-setup-for-wireguard-client/7577
+        }
+      ];
+    };
   };
 
   fonts.packages = with pkgs; [
@@ -301,9 +368,15 @@
   ];
   fonts.fontDir.enable = true;
 
-  # nixpkgs.config.packageOverrides = pkgs: {
-  #   avahi = pkgs.avahi.override {withLibdnssdCompat = true; };
-  # };
+  nixpkgs.config.packageOverrides = pkgs: {
+    # avahi = pkgs.avahi.override {withLibdnssdCompat = true; };
+    bun = pkgs.bun.overrideAttrs {
+      src = builtins.fetchurl {
+        url = "https://github.com/oven-sh/bun/releases/download/canary/bun-linux-x64.zip";
+        sha256 = "sha256:17sigs5h32kn5d5mn05by1d0j8aanlwgl9s7li677rsggikkvl3w";
+      };
+    };
+  };
 
   #console.font = "ZedMono";
   # Some programs need SUID wrappers, can be configured further or are
