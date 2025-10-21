@@ -2,15 +2,24 @@
 # your system. Help is available in the configuration.nix(5) man page, on
 # https://search.nixos.org/options and in the NixOS manual (`nixos-help`).
 
-{ inputs, config, lib, pkgs, ... }:
+{
+  inputs,
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-    ];
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+  ];
 
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
@@ -21,12 +30,12 @@
     # here, NOT in environment.systemPackagesy
   ];
 
-# boot.kernelParams = [
-#   "nvidia-drm.fbdev=1"
-#  ];
+  # boot.kernelParams = [
+  #   "nvidia-drm.fbdev=1"
+  #  ];
 
   nixpkgs.config.allowUnfree = true;
-   # do garbage collection weekly to keep disk usage low
+  # do garbage collection weekly to keep disk usage low
   nix.gc = {
     automatic = lib.mkDefault true;
     dates = lib.mkDefault "weekly";
@@ -47,10 +56,10 @@
   #     ];
   #   };
 
-   # Enable OpenGL
+  # Enable OpenGL
   hardware.graphics.enable = true;
 
-  services.xserver.videoDrivers = ["nvidia"];
+  services.xserver.videoDrivers = [ "nvidia" ];
   hardware.nvidia = {
 
     # Modesetting is required.
@@ -76,7 +85,7 @@
     open = false;
 
     # Enable the Nvidia settings menu,
-  # accessible via `nvidia-settings`.
+    # accessible via `nvidia-settings`.
     nvidiaSettings = true;
 
     # Optionally, you may need to select the appropriate driver version for your specific GPU.
@@ -93,14 +102,12 @@
 
   services.printing.enable = true;
   services.avahi = {
-  enable = true;
-  nssmdns4 = true;
-  openFirewall = true;
-};
+    enable = true;
+    nssmdns4 = true;
+    openFirewall = true;
+  };
 
-services.printing.drivers = [ pkgs.brlaser ];
-
-
+  services.printing.drivers = [ pkgs.brlaser ];
 
   # services.mysql.enable = true;
   # services.mysql.package = pkgs.mariadb;
@@ -129,7 +136,6 @@ services.printing.drivers = [ pkgs.brlaser ];
     };
   };
 
-  
   services.desktopManager.plasma6.enable = true;
 
   networking.networkmanager.enable = true;
@@ -137,13 +143,13 @@ services.printing.drivers = [ pkgs.brlaser ];
   programs.fish.enable = true;
   programs.direnv.enable = true;
   programs.bash = {
-  interactiveShellInit = ''
-    if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
-    then
-      shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
-      exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
-    fi
-  '';
+    interactiveShellInit = ''
+      if [[ $(${pkgs.procps}/bin/ps --no-header --pid=$PPID --format=comm) != "fish" && -z ''${BASH_EXECUTION_STRING} ]]
+      then
+        shopt -q login_shell && LOGIN_OPTION='--login' || LOGIN_OPTION=""
+        exec ${pkgs.fish}/bin/fish $LOGIN_OPTION
+      fi
+    '';
   };
 
   programs.gnupg = {
@@ -153,10 +159,11 @@ services.printing.drivers = [ pkgs.brlaser ];
       enableSSHSupport = true;
     };
   };
-  
+
   programs.steam = {
     enable = true;
   };
+  programs.kdeconnect.enable = true;
 
   networking.hostName = "jacks-pc"; # Define your hostname.
   # Pick only one of the below networking options.
@@ -164,8 +171,7 @@ services.printing.drivers = [ pkgs.brlaser ];
   # networking.networkmanager.enable = true;  # Easiest to use and most distros use this by default.
 
   # Set your time zone.
-   time.timeZone = "America/New_York";
-
+  time.timeZone = "America/New_York";
 
   programs.adb.enable = true;
 
@@ -196,10 +202,13 @@ services.printing.drivers = [ pkgs.brlaser ];
     pulse.enable = true;
     jack.enable = true;
   };
-   services.pcscd.enable = true;
-   services.udev.packages = [pkgs.yubikey-personalization pkgs.openocd];
+  services.pcscd.enable = true;
+  services.udev.packages = [
+    pkgs.yubikey-personalization
+    pkgs.openocd
+  ];
   #  hardware.gpgSmartcards.enable = true;
-  
+
   # Enable touchpad support (enabled default in most desktopManager).
   # services.libinput.enable = true;
 
@@ -215,7 +224,7 @@ services.printing.drivers = [ pkgs.brlaser ];
       "plugdev"
       "dialout"
     ]; # Enable ‘sudo’ for the user.
-     packages = with pkgs; [
+    packages = with pkgs; [
       age-plugin-yubikey
       bun
       alacritty
@@ -241,11 +250,12 @@ services.printing.drivers = [ pkgs.brlaser ];
       yubico-piv-tool
       android-studio
       yubioath-flutter
-     ];
+      nixfmt-rfc-style
+    ];
   };
 
-#   List packages installed in system profile. To search, run:
-#   $ nix search wget
+  #   List packages installed in system profile. To search, run:
+  #   $ nix search wget
   environment.systemPackages = with pkgs; [
     git
     wget
@@ -277,30 +287,33 @@ services.printing.drivers = [ pkgs.brlaser ];
   ];
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
-#   services.openssh = {
-#   enable = true;
-#   ports = [ 22 ];
-#   settings = {
-#     PasswordAuthentication = true;
-#     AllowUsers = null; # Allows all users by default. Can be [ "user1" "user2" ]
-#     UseDns = true;
-#     X11Forwarding = false;
-#     PermitRootLogin = "prohibit-password"; # "yes", "without-password", "prohibit-password", "forced-commands-only", "no"
-#   };
-# };
+  #   services.openssh = {
+  #   enable = true;
+  #   ports = [ 22 ];
+  #   settings = {
+  #     PasswordAuthentication = true;
+  #     AllowUsers = null; # Allows all users by default. Can be [ "user1" "user2" ]
+  #     UseDns = true;
+  #     X11Forwarding = false;
+  #     PermitRootLogin = "prohibit-password"; # "yes", "without-password", "prohibit-password", "forced-commands-only", "no"
+  #   };
+  # };
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 
+    allowedTCPPorts = [
       5173
       3000
-     ];
-    allowedUDPPorts = [ 69 51822]; # Clients and peers can use the same port, see listenport
+    ];
+    allowedUDPPorts = [
+      69
+      51821
+    ]; # Clients and peers can use the same port, see listenport
   };
 
   # networking.vlans = {
-  #   internet = {id=10; interface="enp3s0"; }; 
-  #   admin = {id=500; interface="enp3s0"; }; 
+  #   internet = {id=10; interface="enp3s0"; };
+  #   admin = {id=500; interface="enp3s0"; };
   # };
   hardware.hackrf.enable = true;
   # Enable WireGuard
@@ -308,8 +321,8 @@ services.printing.drivers = [ pkgs.brlaser ];
     # "wg0" is the network interface name. You can name the interface arbitrarily.
     wg0 = {
       # Determines the IP address and subnet of the client's end of the tunnel interface.
-      ips = [ "10.8.0.4/24" ];
-      listenPort = 51822; # to match firewall allowedUDPPorts (without this wg uses random port numbers)
+      ips = [ "10.8.0.4/32" ];
+      listenPort = 51821; # to match firewall allowedUDPPorts (without this wg uses random port numbers)
 
       # Path to the private key file.
       #
@@ -326,7 +339,7 @@ services.printing.drivers = [ pkgs.brlaser ];
           publicKey = "0CExFB1dRPXq23P+pMi3xREjG+ObZQXkPUcJkTrWiH4=";
 
           allowedIPs = [ "10.8.0.0/24" ];
-          
+
           endpoint = "38.132.122.143:51820"; # ToDo: route to endpoint not automatically configured https://wiki.archlinux.org/index.php/WireGuard#Loop_routing https://discourse.nixos.org/t/solved-minimal-firewall-setup-for-wireguard-client/7577
 
           # Send keepalives every 25 seconds. Important to keep NAT tables alive.
@@ -334,7 +347,8 @@ services.printing.drivers = [ pkgs.brlaser ];
         }
       ];
     };
-    wg1 = { # Hackspace
+    wg1 = {
+      # Hackspace
       # Determines the IP address and subnet of the client's end of the tunnel interface.
       ips = [ "192.168.42.5" ];
       listenPort = 51823; # to match firewall allowedUDPPorts (without this wg uses random port numbers)
@@ -353,8 +367,11 @@ services.printing.drivers = [ pkgs.brlaser ];
           # Public key of the server (not a file path).
           publicKey = "CzofXYCRSMXOEtdhdXK2/y+q1ywMEM4rdnOtNxFGyFc=";
 
-          allowedIPs = [ "192.168.42.0/24" "192.168.122.0/24" ];
-          
+          allowedIPs = [
+            "192.168.42.0/24"
+            "192.168.122.0/24"
+          ];
+
           endpoint = "vpn.cthacker.space:23456"; # ToDo: route to endpoint not automatically configured https://wiki.archlinux.org/index.php/WireGuard#Loop_routing https://discourse.nixos.org/t/solved-minimal-firewall-setup-for-wireguard-client/7577
         }
       ];
@@ -423,4 +440,3 @@ services.printing.drivers = [ pkgs.brlaser ];
   system.stateVersion = "24.05"; # Did you read the comment?
 
 }
-
