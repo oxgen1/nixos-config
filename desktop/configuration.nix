@@ -33,6 +33,11 @@
   # boot.kernelParams = [
   #   "nvidia-drm.fbdev=1"
   #  ];
+ boot.initrd.kernelModules = [ 
+    "vfio_pci"
+    "vfio"
+    "vfio_iommu_type1"
+ ];
 
   nixpkgs.config.allowUnfree = true;
   # do garbage collection weekly to keep disk usage low
@@ -82,7 +87,7 @@
     # https://github.com/NVIDIA/open-gpu-kernel-modules#compatible-gpus
     # Only available from driver 515.43.04+
     # Currently alpha-quality/buggy, so false is currently the recommended setting.
-    open = false;
+    open = true;
 
     # Enable the Nvidia settings menu,
     # accessible via `nvidia-settings`.
@@ -91,7 +96,6 @@
     # Optionally, you may need to select the appropriate driver version for your specific GPU.
     package = config.boot.kernelPackages.nvidiaPackages.beta;
   };
-  # users.users.root.initialHashedPassword = "";
 
   services.xserver.enable = true;
   services.displayManager.sddm.enable = true;
@@ -173,12 +177,6 @@
   # Set your time zone.
   time.timeZone = "America/New_York";
 
-  programs.adb.enable = true;
-
-  # Configure network proxy if necessary
-  # networking.proxy.default = "http://user:password@proxy:port/";
-  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
-
   # Select internationalisation properties.
   i18n.defaultLocale = "en_US.UTF-8";
   # console = {
@@ -213,6 +211,18 @@
   # services.libinput.enable = true;
 
   # Define a user account. Don't forget to set a password with ‘passwd’.
+
+  # nixpkgs.overlays= [
+  #    (final: prev: {
+  #       orca-slicer = prev.orca-slicer.overrideAttrs (old: {
+  #         postInstall = (old.postInstall or "") + ''
+  #           mv $out/bin/orca-slicer $out/bin/.orca-slicer-wrapped
+  #           echo "env __GLX_VENDOR_LIBRARY_NAME=mesa __EGL_VENDOR_LIBRARY_FILENAMES=/run/opengl-driver/share/glvnd/egl_vendor.d/50_mesa.json MESA_LOADER_DRIVER_OVERRIDE=zink GALLIUM_DRIVER=zink WEBKIT_DISABLE_DMABUF_RENDERER=1 $out/bin/.orca-slicer-wrapped" > $out/bin/orca-slicer
+  #           chmod +x $out/bin/orca-slicer
+  #         '';
+  #       });
+  #     })
+  # ];
   users.users.jack = {
     isNormalUser = true;
     home = "/home/jack";
@@ -228,31 +238,33 @@
       age-plugin-yubikey
       bun
       alacritty
+      antigravity
       age
       nushell
       starship
       zellij
       mpv
-      fnm
       yubioath-flutter
       flameshot
-      discordo
       yazi
-      spotify-player
       spotify
       obsidian
       discord
+      orca-slicer
       fzf
+      freecad
       gnuradio
       ardour
       yubikey-personalization
-      yubikey-personalization-gui
       yubico-piv-tool
       android-studio
       yubioath-flutter
-      nixfmt-rfc-style
+      nixfmt
     ];
   };
+
+  users.users.root.hashedPassword = "!"; #Disables Root Login
+
 
   #   List packages installed in system profile. To search, run:
   #   $ nix search wget
@@ -263,8 +275,9 @@
     curl
     brave
     vscode
-    kitty
     python3
+    exodus
+    # cura
     # hackrf
     # soapyhackrf
     # soapysdr
@@ -302,13 +315,18 @@
   networking.firewall = {
     enable = true;
     allowedTCPPorts = [
-      5173
-      3000
     ];
     allowedUDPPorts = [
-      69
       51821
     ]; # Clients and peers can use the same port, see listenport
+  };
+
+  sops = {
+    defaultSopsFile = ./secrets.yaml;
+    age.sshKeyPaths = [ "/etc/ssh/ssh_host_ed25519_key" ];
+    age.generateKey = true;
+    secrets.mywg_pk = { };
+    secrets.cthwg_pk = { };
   };
 
   # networking.vlans = {
@@ -329,7 +347,7 @@
       # Note: The private key can also be included inline via the privateKey option,
       # but this makes the private key world-readable; thus, using privateKeyFile is
       # recommended.
-      privateKeyFile = "/home/jack/wireguard-keys/private";
+      privateKeyFile = config.sops.secrets.mywg_pk.path;
 
       peers = [
         # For a client configuration, one peer entry for the server will suffice.
@@ -340,7 +358,7 @@
 
           allowedIPs = [ "10.8.0.0/24" ];
 
-          endpoint = "38.132.122.143:51820"; # ToDo: route to endpoint not automatically configured https://wiki.archlinux.org/index.php/WireGuard#Loop_routing https://discourse.nixos.org/t/solved-minimal-firewall-setup-for-wireguard-client/7577
+          endpoint = "185.244.36.108:51820"; # ToDo: route to endpoint not automatically configured https://wiki.archlinux.org/index.php/WireGuard#Loop_routing https://discourse.nixos.org/t/solved-minimal-firewall-setup-for-wireguard-client/7577
 
           # Send keepalives every 25 seconds. Important to keep NAT tables alive.
           persistentKeepalive = 25;
@@ -358,7 +376,7 @@
       # Note: The private key can also be included inline via the privateKey option,
       # but this makes the private key world-readable; thus, using privateKeyFile is
       # recommended.
-      privateKeyFile = "/home/jack/wireguard-keys/private";
+      privateKeyFile = config.sops.secrets.cthwg_pk.path;
 
       peers = [
         # For a client configuration, one peer entry for the server will suffice.
@@ -385,35 +403,20 @@
   ];
   fonts.fontDir.enable = true;
 
-  nixpkgs.config.packageOverrides = pkgs: {
-    # avahi = pkgs.avahi.override {withLibdnssdCompat = true; };
-    bun = pkgs.bun.overrideAttrs {
-      src = builtins.fetchurl {
-        url = "https://github.com/oven-sh/bun/releases/download/canary/bun-linux-x64.zip";
-        sha256 = "sha256:17sigs5h32kn5d5mn05by1d0j8aanlwgl9s7li677rsggikkvl3w";
-      };
-    };
+  virtualisation.docker.rootless = {
+    enable = true;
+    setSocketVariable = true;
   };
-
-  #console.font = "ZedMono";
-  # Some programs need SUID wrappers, can be configured further or are
-  # started in user sessions.
-  # programs.mtr.enable = true;
-  # programs.gnupg.agent = {
-  #   enable = true;
-  #   enableSSHSupport = true;
+  # nixpkgs.config.packageOverrides = pkgs: {
+  #   # avahi = pkgs.avahi.override {withLibdnssdCompat = true; };
+  #   bun = pkgs.bun.overrideAttrs {
+  #     src = builtins.fetchurl {
+  #       url = "https://github.com/oven-sh/bun/releases/download/canary/bun-linux-x64.zip";
+  #       sha256 = "sha256:17sigs5h32kn5d5mn05by1d0j8aanlwgl9s7li677rsggikkvl3w";
+  #     };
+  #   };
   # };
 
-  # List services that you want to enable:
-
-  # Enable the OpenSSH daemon.
-  # services.openssh.enable = true;
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
 
   # Copy the NixOS configuration file and link it from the resulting system
   # (/run/current-system/configuration.nix). This is useful in case you
