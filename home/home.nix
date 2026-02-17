@@ -12,6 +12,8 @@
     conntrack-tools
     hping
     tcpdump
+    # exodus
+    cura-appimage
   ];
 
   programs.direnv = {
